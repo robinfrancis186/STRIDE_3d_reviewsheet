@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import shutil
 from collections import Counter, defaultdict
@@ -17,6 +18,7 @@ OUTPUT_HTML = WORKSPACE / "dashboard" / "stride_device_review_dashboard.html"
 ASSET_DIR = WORKSPACE / "dashboard" / "assets"
 PRODUCT_ASSET_DIR = ASSET_DIR / "products"
 OLD_GENERATED_CONCEPT = ASSET_DIR / "stride_dashboard_concept.png"
+COPIED_IMAGE_BY_HASH: dict[str, str] = {}
 
 DIVISIONS = ["Learning", "Elderly Care", "Blind", "Montessori Kits", "Others"]
 CATEGORY_LABELS = {
@@ -184,6 +186,57 @@ REFERENCE_IMAGE_MAP: dict[str, list[str]] = {
     "Battleship - Naval Strategy Game": REAL_IMAGES["Battleship"],
 }
 
+SUPPLEMENTAL_REFERENCES: list[dict[str, Any]] = [
+    {
+        "siNo": "S1",
+        "name": "Minimalist Book Stand / Bookend",
+        "designer": "fifindr",
+        "platformCategory": "Tools",
+        "suggestedSetting": "Special education and assistive learning",
+        "description": "Compact bookend and reading support reference captured from the supplied real screenshot set.",
+        "downloads": "1.9K",
+        "likes": 485,
+        "datePublished": "2024-11-30",
+        "images": REAL_IMAGES["Minimalist Book Stand / Bookend"],
+    },
+    {
+        "siNo": "S2",
+        "name": "Book Stand with Dish",
+        "designer": "Neruson",
+        "platformCategory": "Tools",
+        "suggestedSetting": "Special education and assistive learning",
+        "description": "Book stand and dish organizer reference retained from the supplied real image set.",
+        "downloads": 50,
+        "likes": 21,
+        "datePublished": "2025-07-07",
+        "images": REAL_IMAGES["Book Stand with Dish"],
+    },
+    {
+        "siNo": "S3",
+        "name": "Lion 3D Puzzle | Montessori Educational Game",
+        "designer": "mcgiver87",
+        "platformCategory": "Toys & Games",
+        "suggestedSetting": "Anganwadis",
+        "description": "Montessori-style animal puzzle reference for fine motor skills, matching, and early learning review.",
+        "downloads": 422,
+        "likes": 510,
+        "datePublished": "",
+        "images": REAL_IMAGES["Montessori Lion Puzzle"],
+    },
+    {
+        "siNo": "S4",
+        "name": "Pill box weekly - two variants",
+        "designer": "motorola2001",
+        "platformCategory": "Household",
+        "suggestedSetting": "Elderly care and daily living",
+        "description": "Weekly pill organization reference for medication routine support and elderly-care review.",
+        "downloads": "2.7K",
+        "likes": 753,
+        "datePublished": "2024-02-26",
+        "images": REAL_IMAGES["Pill Box"],
+    },
+]
+
 
 def slugify(value: str) -> str:
     text = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
@@ -265,14 +318,18 @@ def review_focus(division: str, status: str, name: str) -> str:
 def copy_real_images(image_names: list[str], asset_prefix: str) -> list[dict[str, str]]:
     copied: list[dict[str, str]] = []
     PRODUCT_ASSET_DIR.mkdir(parents=True, exist_ok=True)
-    for index, image_name in enumerate(image_names, start=1):
+    for image_name in image_names:
         source = dl(image_name)
         if not source.exists():
             continue
         ext = source.suffix.lower() if source.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"} else ".jpg"
-        dest_name = f"{slugify(asset_prefix)}-{index}{ext}"
-        dest = PRODUCT_ASSET_DIR / dest_name
-        shutil.copy2(source, dest)
+        source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
+        dest_name = COPIED_IMAGE_BY_HASH.get(source_hash)
+        if dest_name is None:
+            dest_name = f"{slugify(source.stem)}-{source_hash[:8]}{ext}"
+            dest = PRODUCT_ASSET_DIR / dest_name
+            shutil.copy2(source, dest)
+            COPIED_IMAGE_BY_HASH[source_hash] = dest_name
         copied.append(
             {
                 "src": f"assets/products/{dest_name}",
@@ -299,6 +356,16 @@ def image_assignment(name: str, fallback_key: str, mapping: dict[str, list[str]]
         }[division]
         match_quality = "Related supplied real image"
     images = copy_real_images(image_names, fallback_key)
+    if not images and match_quality == "Supplied real image":
+        fallback_images = {
+            "Blind": REAL_IMAGES["Braille Generator"],
+            "Elderly Care": REAL_IMAGES["Grocery Bag Carrier Handle"],
+            "Montessori Kits": REAL_IMAGES["Pattern Puzzle Block"],
+            "Learning": REAL_IMAGES["Abacus Model"],
+            "Others": REAL_IMAGES["I Know My Shapes Box"],
+        }[division]
+        images = copy_real_images(fallback_images, fallback_key)
+        match_quality = "Related supplied real image"
     return images, match_quality if images else "Image missing from supplied files"
 
 
@@ -327,23 +394,51 @@ def load_catalogue() -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[s
             }
         )
 
+    seen_raw_rows: set[tuple[Any, ...]] = set()
+    deduped_rows: list[dict[str, Any]] = []
+    duplicate_rows_removed = 0
+    for row in raw_rows:
+        row_key = (
+            row["siNo"],
+            row["name"].casefold(),
+            row["category"].casefold(),
+            row["productionReady"],
+            row["prototypeReady"],
+            row["designReady"],
+            row["targetSetting"].casefold(),
+        )
+        if row_key in seen_raw_rows:
+            duplicate_rows_removed += 1
+            continue
+        seen_raw_rows.add(row_key)
+        deduped_rows.append(row)
+    raw_rows = deduped_rows
+
     id_counts = Counter(row["siNo"] for row in raw_rows)
+    id_occurrences: Counter[Any] = Counter()
     devices: list[dict[str, Any]] = []
     for row in raw_rows:
+        source_si_no = row["siNo"]
+        id_occurrences[source_si_no] += 1
+        if id_counts[source_si_no] > 1:
+            suffix = chr(64 + id_occurrences[source_si_no]) if id_occurrences[source_si_no] <= 26 else f"-{id_occurrences[source_si_no]}"
+            display_si_no = f"{source_si_no}{suffix}"
+        else:
+            display_si_no = str(source_si_no)
         category = row["category"]
         division = infer_division(row["name"], row["targetSetting"])
         status = readiness_status(row["productionReady"], row["prototypeReady"], row["designReady"])
-        images, match_quality = image_assignment(row["name"], f"device-{row['siNo']}-{row['name']}", DEVICE_IMAGE_MAP, division)
+        images, match_quality = image_assignment(row["name"], f"device-{display_si_no}-{row['name']}", DEVICE_IMAGE_MAP, division)
         qa_flags: list[str] = []
         if not row["targetSetting"]:
             qa_flags.append("Missing target setting")
-        if id_counts[row["siNo"]] > 1:
-            qa_flags.append("Duplicate SI No.")
         if match_quality != "Supplied real image":
             qa_flags.append(match_quality)
         devices.append(
             {
                 **row,
+                "sourceSiNo": source_si_no,
+                "siNo": display_si_no,
                 "id": f"d-{row['row']}",
                 "categoryLabel": CATEGORY_LABELS.get(category, category),
                 "division": division,
@@ -387,7 +482,33 @@ def load_catalogue() -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[s
             }
         )
 
-    metrics = summarize(devices, references, dashboard_ws["B6"].value)
+    existing_reference_names = {row["name"].casefold() for row in references}
+    for supplemental in SUPPLEMENTAL_REFERENCES:
+        if supplemental["name"].casefold() in existing_reference_names:
+            continue
+        division = infer_division(supplemental["name"], supplemental["suggestedSetting"], supplemental["description"])
+        images = copy_real_images(supplemental["images"], f"supplemental-{supplemental['siNo']}-{supplemental['name']}")
+        references.append(
+            {
+                "id": f"s-{supplemental['siNo']}",
+                "siNo": supplemental["siNo"],
+                "name": supplemental["name"],
+                "designer": supplemental["designer"],
+                "platformCategory": supplemental["platformCategory"],
+                "suggestedSetting": supplemental["suggestedSetting"],
+                "description": supplemental["description"],
+                "downloads": supplemental["downloads"],
+                "likes": supplemental["likes"],
+                "downloadsNumeric": parse_metric(supplemental["downloads"]),
+                "likesNumeric": parse_metric(supplemental["likes"]),
+                "datePublished": supplemental["datePublished"],
+                "division": division,
+                "images": images,
+                "imageSource": "Supplemental supplied real image",
+            }
+        )
+
+    metrics = summarize(devices, references, dashboard_ws["B6"].value, duplicate_rows_removed)
     return devices, references, metrics
 
 
@@ -400,7 +521,12 @@ def about_device(name: str, division: str, target: str, status: str) -> str:
     )
 
 
-def summarize(devices: list[dict[str, Any]], references: list[dict[str, Any]], source_dashboard_total: Any) -> dict[str, Any]:
+def summarize(
+    devices: list[dict[str, Any]],
+    references: list[dict[str, Any]],
+    source_dashboard_total: Any,
+    duplicate_rows_removed: int,
+) -> dict[str, Any]:
     category_counts = Counter(device["categoryLabel"] for device in devices)
     division_counts = Counter(device["division"] for device in devices)
     readiness_counts = Counter(device["readiness"] for device in devices)
@@ -411,7 +537,30 @@ def summarize(devices: list[dict[str, Any]], references: list[dict[str, Any]], s
     assigned_images = sum(1 for device in devices if device["imageSource"] == "Supplied real image")
     with_images = sum(1 for device in devices if device["images"])
     reference_with_images = sum(1 for ref in references if ref["images"])
-    duplicate_ids = sorted({device["siNo"] for device in devices if sum(1 for item in devices if item["siNo"] == device["siNo"]) > 1})
+    source_duplicate_ids = sorted(
+        {device["sourceSiNo"] for device in devices if sum(1 for item in devices if item["sourceSiNo"] == device["sourceSiNo"]) > 1}
+    )
+    display_duplicate_ids = sorted(
+        {device["siNo"] for device in devices if sum(1 for item in devices if item["siNo"] == device["siNo"]) > 1}
+    )
+    all_supplied_images = {image_name for image_names in REAL_IMAGES.values() for image_name in image_names}
+    used_source_images = {
+        Path(image["sourceFile"]).name
+        for row in [*devices, *references]
+        for image in row.get("images", [])
+        if image.get("sourceFile")
+    }
+    unique_asset_paths = {
+        image["src"]
+        for row in [*devices, *references]
+        for image in row.get("images", [])
+        if image.get("src")
+    }
+    missing_image_items = [
+        row["name"]
+        for row in [*devices, *references]
+        if not row.get("images")
+    ]
 
     top_references = sorted(
         references,
@@ -437,11 +586,17 @@ def summarize(devices: list[dict[str, Any]], references: list[dict[str, Any]], s
         "qa": {
             "sourceDashboardTotal": source_dashboard_total,
             "currentDeviceRows": len(devices),
+            "duplicateRowsRemoved": duplicate_rows_removed,
             "missingTargetSettings": sum(1 for device in devices if not device["targetSetting"]),
-            "duplicateSiNumbers": duplicate_ids,
+            "sourceDuplicateSiNumbers": source_duplicate_ids,
+            "displayDuplicateSiNumbers": display_duplicate_ids,
+            "missingImageItems": missing_image_items,
             "devicesWithRealImages": with_images,
             "assignedDeviceImages": assigned_images,
             "referencesWithRealImages": reference_with_images,
+            "uniqueImageAssets": len(unique_asset_paths),
+            "totalImageReferences": sum(len(row.get("images", [])) for row in [*devices, *references]),
+            "unusedSuppliedImages": sorted(all_supplied_images - used_source_images),
         },
     }
 
@@ -452,6 +607,7 @@ HTML_TEMPLATE = """<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>STRIDE Device Review Dashboard</title>
+  <link rel="icon" href="data:,">
   <style>
     :root {
       --bg: #f5f7fa;
@@ -1075,12 +1231,15 @@ HTML_TEMPLATE = """<!doctype html>
     }
     function renderQuality() {
       const qa = metrics.qa;
-      const duplicateText = qa.duplicateSiNumbers.length ? "Duplicate SI No. " + qa.duplicateSiNumbers.join(", ") : "No duplicate SI numbers";
+      const sourceDuplicateText = qa.sourceDuplicateSiNumbers.length ? "Source SI " + qa.sourceDuplicateSiNumbers.join(", ") + " normalized in dashboard." : "Source SI numbers are unique.";
+      const displayDuplicateText = qa.displayDuplicateSiNumbers.length ? "Duplicate display IDs: " + qa.displayDuplicateSiNumbers.join(", ") : "No duplicate dashboard IDs.";
+      const imageText = qa.missingImageItems.length ? "Missing image for " + qa.missingImageItems.length + " item(s)." : "No missing images; " + qa.uniqueImageAssets + " unique real image assets used.";
+      const unusedText = qa.unusedSuppliedImages.length ? qa.unusedSuppliedImages.length + " supplied image file(s) unused." : "All supplied real image files are represented.";
       const items = [
         ["Excel Count", "Workbook dashboard shows " + qa.sourceDashboardTotal + "; current catalogue has " + qa.currentDeviceRows + "."],
-        ["Images", qa.devicesWithRealImages + " devices use supplied real images; " + qa.assignedDeviceImages + " are assigned from your image set."],
+        ["Images", imageText + " " + unusedText],
         ["Target Setting", qa.missingTargetSettings + " rows need target setting review."],
-        ["Catalogue ID", duplicateText + "."]
+        ["Catalogue ID", displayDuplicateText + " " + sourceDuplicateText]
       ];
       els.qualityStrip.innerHTML = items.map(item => '<div class="quality-item"><strong>' + escapeHTML(item[0]) + '</strong>' + escapeHTML(item[1]) + '</div>').join("");
     }
@@ -1165,6 +1324,7 @@ HTML_TEMPLATE = """<!doctype html>
         + '<h2 class="selected-title">' + escapeHTML(item.name) + '</h2>'
         + '<div class="chips"><span class="chip ' + chipClass(item.categoryLabel) + '">' + escapeHTML(item.categoryLabel) + '</span><span class="chip">' + escapeHTML(item.division) + '</span><span class="chip ' + chipClass(item.readiness) + '">' + escapeHTML(item.readiness) + '</span><span class="chip ' + decisionClass(decision) + '">' + escapeHTML(decision) + '</span></div>'
         + '<dl class="detail-list">'
+        + '<div class="detail-row"><dt>Catalogue ID</dt><dd>' + escapeHTML(item.siNo) + (String(item.siNo) !== String(item.sourceSiNo) ? ' <span style="color:var(--muted)">(source SI ' + escapeHTML(item.sourceSiNo) + ')</span>' : '') + '</dd></div>'
         + '<div class="detail-row"><dt>About</dt><dd>' + escapeHTML(item.about) + '</dd></div>'
         + '<div class="detail-row"><dt>Target</dt><dd>' + escapeHTML(item.targetSetting || "Needs assignment") + '</dd></div>'
         + '<div class="detail-row"><dt>Next Stage</dt><dd>' + escapeHTML(item.nextStage) + '</dd></div>'
@@ -1225,7 +1385,7 @@ HTML_TEMPLATE = """<!doctype html>
     }
     function renderSource() {
       els.generatedAt.textContent = metrics.generatedAt;
-      els.sourceMethod.textContent = "Source workbook: " + metrics.sourceWorkbook + ". Device rows come from the Device Catalogue sheet; external references come from the MakerWorld Reference sheet. Product images are copied from the real files supplied in Downloads into dashboard/assets/products. Review decisions, notes, and checklist states are saved in browser localStorage and exported through CSV.";
+      els.sourceMethod.textContent = "Source workbook: " + metrics.sourceWorkbook + ". Device rows come from the Device Catalogue sheet; external references come from the MakerWorld Reference sheet plus supplemental supplied screenshots that were not represented in the workbook. Product images are copied from the real files supplied in Downloads into dashboard/assets/products, de-duplicated by image content, and reused where the same real source supports more than one product. Duplicate source SI numbers are normalized into unique dashboard catalogue IDs. Review decisions, notes, and checklist states are saved in browser localStorage and exported through CSV.";
     }
     function renderAll() {
       renderSidebar();
@@ -1259,9 +1419,9 @@ HTML_TEMPLATE = """<!doctype html>
       els.downloadCsv.addEventListener("click", downloadCsv);
     }
     function downloadCsv() {
-      const headers = ["SI No.", "Device Name", "Category", "Division", "Readiness", "Next Stage", "Review Decision", "Target Setting", "Review Focus", "Image Source", "Image Files", "Reviewer Notes", "QA Flags"];
+      const headers = ["Catalogue ID", "Source SI No.", "Device Name", "Category", "Division", "Readiness", "Next Stage", "Review Decision", "Target Setting", "Review Focus", "Image Source", "Image Files", "Reviewer Notes", "QA Flags"];
       const rows = filteredDevices().map(row => [
-        row.siNo, row.name, row.categoryLabel, row.division, row.readiness, row.nextStage, decisionFor(row), row.targetSetting, row.reviewFocus, row.imageSource, row.images.map(image => image.fileName).join("; "), state.notes[row.id] || "", row.qaFlags.join("; ")
+        row.siNo, row.sourceSiNo, row.name, row.categoryLabel, row.division, row.readiness, row.nextStage, decisionFor(row), row.targetSetting, row.reviewFocus, row.imageSource, row.images.map(image => image.fileName).join("; "), state.notes[row.id] || "", row.qaFlags.join("; ")
       ]);
       const csv = [headers].concat(rows).map(row => row.map(cell => '"' + String(cell ?? "").replace(/"/g, '""') + '"').join(",")).join("\\n");
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -1286,6 +1446,7 @@ HTML_TEMPLATE = """<!doctype html>
 
 
 def build() -> None:
+    COPIED_IMAGE_BY_HASH.clear()
     if OLD_GENERATED_CONCEPT.exists():
         OLD_GENERATED_CONCEPT.unlink()
     if PRODUCT_ASSET_DIR.exists():
