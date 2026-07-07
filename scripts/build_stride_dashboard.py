@@ -77,6 +77,11 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Sensory Rubiks Cube": ["PHOTO-2026-04-21-10-53-17.jpg"],
     "Tetris": ["PHOTO-2026-04-21-10-53-42.jpg"],
     "Tactile Chess Board": ["PHOTO-2026-04-21-11-09-15.jpg"],
+    "Micro Travel Chess Set": [
+        "stride_dashboard_sources/micro-travel-chess-set-1.webp",
+        "stride_dashboard_sources/micro-travel-chess-set-2.webp",
+        "stride_dashboard_sources/micro-travel-chess-set-3.webp",
+    ],
     "Abacus Model": ["PHOTO-2026-04-28-11-34-03 2.jpg"],
     "Focus-Boosting Eight-Figure Tool": ["PHOTO-2026-04-28-11-34-03 3.jpg"],
     "Learning Scale with Numbers": ["PHOTO-2026-04-28-11-34-03.jpg"],
@@ -235,6 +240,18 @@ SUPPLEMENTAL_REFERENCES: list[dict[str, Any]] = [
         "datePublished": "2024-02-26",
         "images": REAL_IMAGES["Pill Box"],
     },
+    {
+        "siNo": "S5",
+        "name": "Micro travel chess set",
+        "designer": "Ashwood",
+        "platformCategory": "Toys & Games",
+        "suggestedSetting": "Special education and assistive learning",
+        "description": "Compact playable chess set reference measuring around 82mm by 79mm with a low-profile travel format.",
+        "downloads": "6.5K",
+        "likes": "3.6K",
+        "datePublished": "",
+        "images": REAL_IMAGES["Micro Travel Chess Set"],
+    },
 ]
 
 
@@ -369,7 +386,70 @@ def image_assignment(name: str, fallback_key: str, mapping: dict[str, list[str]]
     return images, match_quality if images else "Image missing from supplied files"
 
 
-def load_catalogue() -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+def load_existing_payload() -> dict[str, Any]:
+    if not OUTPUT_HTML.exists():
+        raise FileNotFoundError(
+            f"{SOURCE_XLSX} is unavailable and no existing dashboard payload was found at {OUTPUT_HTML}"
+        )
+    html = OUTPUT_HTML.read_text(encoding="utf-8")
+    match = re.search(r"const payload = (.*?);\n\s*const ", html, flags=re.S)
+    if not match:
+        raise ValueError(f"Could not locate embedded dashboard payload in {OUTPUT_HTML}")
+    return json.loads(match.group(1))
+
+
+def append_supplemental_references(references: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    existing_reference_names = {row["name"].casefold() for row in references}
+    for supplemental in SUPPLEMENTAL_REFERENCES:
+        if supplemental["name"].casefold() in existing_reference_names:
+            continue
+        division = infer_division(supplemental["name"], supplemental["suggestedSetting"], supplemental["description"])
+        images = copy_real_images(supplemental["images"], f"supplemental-{supplemental['siNo']}-{supplemental['name']}")
+        references.append(
+            {
+                "id": f"s-{supplemental['siNo']}",
+                "siNo": supplemental["siNo"],
+                "name": supplemental["name"],
+                "designer": supplemental["designer"],
+                "platformCategory": supplemental["platformCategory"],
+                "suggestedSetting": supplemental["suggestedSetting"],
+                "description": supplemental["description"],
+                "downloads": supplemental["downloads"],
+                "likes": supplemental["likes"],
+                "downloadsNumeric": parse_metric(supplemental["downloads"]),
+                "likesNumeric": parse_metric(supplemental["likes"]),
+                "datePublished": supplemental["datePublished"],
+                "division": division,
+                "images": images,
+                "imageSource": "Supplemental supplied real image",
+            }
+        )
+        existing_reference_names.add(supplemental["name"].casefold())
+    return references
+
+
+def load_catalogue_from_existing_payload() -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    payload = load_existing_payload()
+    devices = list(payload.get("devices", []))
+    references = append_supplemental_references(list(payload.get("references", [])))
+    old_metrics = payload.get("metrics", {})
+    old_qa = old_metrics.get("qa", {})
+    review_items = [*devices, *[reference_to_review_item(row) for row in references]]
+    metrics = summarize(
+        review_items,
+        devices,
+        references,
+        old_qa.get("sourceDashboardTotal", old_metrics.get("deviceCount", len(devices))),
+        old_qa.get("duplicateRowsRemoved", 0),
+    )
+    metrics["sourceWorkbook"] = f"{SOURCE_XLSX} (workbook unavailable; rebuilt from existing dashboard payload)"
+    return devices, references, review_items, metrics
+
+
+def load_catalogue() -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+    if not SOURCE_XLSX.exists():
+        return load_catalogue_from_existing_payload()
+
     wb = load_workbook(SOURCE_XLSX, data_only=True)
     ws = wb["Device Catalogue"]
     dashboard_ws = wb["Dashboard"]
@@ -482,34 +562,11 @@ def load_catalogue() -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[s
             }
         )
 
-    existing_reference_names = {row["name"].casefold() for row in references}
-    for supplemental in SUPPLEMENTAL_REFERENCES:
-        if supplemental["name"].casefold() in existing_reference_names:
-            continue
-        division = infer_division(supplemental["name"], supplemental["suggestedSetting"], supplemental["description"])
-        images = copy_real_images(supplemental["images"], f"supplemental-{supplemental['siNo']}-{supplemental['name']}")
-        references.append(
-            {
-                "id": f"s-{supplemental['siNo']}",
-                "siNo": supplemental["siNo"],
-                "name": supplemental["name"],
-                "designer": supplemental["designer"],
-                "platformCategory": supplemental["platformCategory"],
-                "suggestedSetting": supplemental["suggestedSetting"],
-                "description": supplemental["description"],
-                "downloads": supplemental["downloads"],
-                "likes": supplemental["likes"],
-                "downloadsNumeric": parse_metric(supplemental["downloads"]),
-                "likesNumeric": parse_metric(supplemental["likes"]),
-                "datePublished": supplemental["datePublished"],
-                "division": division,
-                "images": images,
-                "imageSource": "Supplemental supplied real image",
-            }
-        )
+    references = append_supplemental_references(references)
 
-    metrics = summarize(devices, references, dashboard_ws["B6"].value, duplicate_rows_removed)
-    return devices, references, metrics
+    review_items = [*devices, *[reference_to_review_item(row) for row in references]]
+    metrics = summarize(review_items, devices, references, dashboard_ws["B6"].value, duplicate_rows_removed)
+    return devices, references, review_items, metrics
 
 
 def about_device(name: str, division: str, target: str, status: str) -> str:
@@ -521,44 +578,97 @@ def about_device(name: str, division: str, target: str, status: str) -> str:
     )
 
 
+def category_for_review_item(name: str, division: str, platform: str = "", description: str = "") -> str:
+    combined = f"{name} {division} {platform} {description}".lower()
+    if division in {"Blind", "Elderly Care"}:
+        return "Assistive Devices"
+    if any(term in combined for term in ["braille", "blind", "low vision", "assist", "aid", "opener", "handle", "holder", "splint", "tremor"]):
+        return "Assistive Devices"
+    return "Cognitive Devices"
+
+
+def about_reference(row: dict[str, Any]) -> str:
+    target = row["suggestedSetting"] or "review assignment"
+    description = row["description"] or "Supplied real-image reference for catalogue review."
+    return (
+        f"{row['name']} is an additional real-image reference grouped under {row['division']} for {target}. "
+        f"{description} The review should decide whether it should become a STRIDE device candidate, remain pending, or be disposed."
+    )
+
+
+def reference_to_review_item(row: dict[str, Any]) -> dict[str, Any]:
+    category_label = category_for_review_item(row["name"], row["division"], row["platformCategory"], row["description"])
+    qa_flags: list[str] = []
+    if not row["images"]:
+        qa_flags.append("Image missing from supplied files")
+    if row["imageSource"] == "Related supplied real image":
+        qa_flags.append(row["imageSource"])
+    return {
+        "id": f"ref-{row['id']}",
+        "source": "Reference Image",
+        "sourceSiNo": row["siNo"],
+        "siNo": str(row["siNo"]) if str(row["siNo"]).startswith("S") else f"R{row['siNo']}",
+        "name": row["name"],
+        "category": "Assistive" if category_label == "Assistive Devices" else "Cognitive",
+        "categoryLabel": category_label,
+        "division": row["division"],
+        "readiness": "Reference Review",
+        "nextStage": "Candidate Screening",
+        "readinessRank": 0,
+        "targetSetting": row["suggestedSetting"],
+        "designer": row["designer"],
+        "platformCategory": row["platformCategory"],
+        "description": row["description"],
+        "downloads": row["downloads"],
+        "likes": row["likes"],
+        "datePublished": row["datePublished"],
+        "images": row["images"],
+        "imageSource": row["imageSource"],
+        "reviewFocus": review_focus(row["division"], "Needs Design", row["name"]),
+        "qaFlags": qa_flags,
+        "about": about_reference(row),
+    }
+
+
 def summarize(
+    review_items: list[dict[str, Any]],
     devices: list[dict[str, Any]],
     references: list[dict[str, Any]],
     source_dashboard_total: Any,
     duplicate_rows_removed: int,
 ) -> dict[str, Any]:
-    category_counts = Counter(device["categoryLabel"] for device in devices)
-    division_counts = Counter(device["division"] for device in devices)
-    readiness_counts = Counter(device["readiness"] for device in devices)
+    category_counts = Counter(item["categoryLabel"] for item in review_items)
+    division_counts = Counter(item["division"] for item in review_items)
+    readiness_counts = Counter(item["readiness"] for item in review_items)
     by_category_division: dict[str, dict[str, int]] = defaultdict(lambda: {division: 0 for division in DIVISIONS})
-    for device in devices:
-        by_category_division[device["categoryLabel"]][device["division"]] += 1
+    for item in review_items:
+        by_category_division[item["categoryLabel"]][item["division"]] += 1
 
-    assigned_images = sum(1 for device in devices if device["imageSource"] == "Supplied real image")
-    with_images = sum(1 for device in devices if device["images"])
+    assigned_images = sum(1 for item in review_items if item["imageSource"] in {"Supplied real image", "Supplemental supplied real image"})
+    with_images = sum(1 for item in review_items if item["images"])
     reference_with_images = sum(1 for ref in references if ref["images"])
     source_duplicate_ids = sorted(
         {device["sourceSiNo"] for device in devices if sum(1 for item in devices if item["sourceSiNo"] == device["sourceSiNo"]) > 1}
     )
     display_duplicate_ids = sorted(
-        {device["siNo"] for device in devices if sum(1 for item in devices if item["siNo"] == device["siNo"]) > 1}
+        {item["siNo"] for item in review_items if sum(1 for row in review_items if row["siNo"] == item["siNo"]) > 1}
     )
-    all_supplied_images = {image_name for image_names in REAL_IMAGES.values() for image_name in image_names}
+    all_supplied_images = {Path(image_name).name for image_names in REAL_IMAGES.values() for image_name in image_names}
     used_source_images = {
         Path(image["sourceFile"]).name
-        for row in [*devices, *references]
+        for row in review_items
         for image in row.get("images", [])
         if image.get("sourceFile")
     }
     unique_asset_paths = {
         image["src"]
-        for row in [*devices, *references]
+        for row in review_items
         for image in row.get("images", [])
         if image.get("src")
     }
     missing_image_items = [
         row["name"]
-        for row in [*devices, *references]
+        for row in review_items
         if not row.get("images")
     ]
 
@@ -573,6 +683,7 @@ def summarize(
         "sourceWorkbook": str(SOURCE_XLSX),
         "deviceCount": len(devices),
         "referenceCount": len(references),
+        "reviewItemCount": len(review_items),
         "categoryCounts": dict(category_counts),
         "divisionCounts": {division: division_counts.get(division, 0) for division in DIVISIONS},
         "readinessCounts": {
@@ -580,22 +691,26 @@ def summarize(
             "Prototype Ready": readiness_counts.get("Prototype Ready", 0),
             "Design Ready": readiness_counts.get("Design Ready", 0),
             "Needs Design": readiness_counts.get("Needs Design", 0),
+            "Reference Review": readiness_counts.get("Reference Review", 0),
         },
         "byCategoryDivision": by_category_division,
         "topReferences": top_references,
         "qa": {
             "sourceDashboardTotal": source_dashboard_total,
             "currentDeviceRows": len(devices),
+            "currentReviewRows": len(review_items),
+            "additionalImageRows": len(review_items) - len(devices),
             "duplicateRowsRemoved": duplicate_rows_removed,
-            "missingTargetSettings": sum(1 for device in devices if not device["targetSetting"]),
+            "missingTargetSettings": sum(1 for item in review_items if not item["targetSetting"]),
             "sourceDuplicateSiNumbers": source_duplicate_ids,
             "displayDuplicateSiNumbers": display_duplicate_ids,
             "missingImageItems": missing_image_items,
-            "devicesWithRealImages": with_images,
+            "devicesWithRealImages": sum(1 for device in devices if device["images"]),
+            "reviewItemsWithRealImages": with_images,
             "assignedDeviceImages": assigned_images,
             "referencesWithRealImages": reference_with_images,
             "uniqueImageAssets": len(unique_asset_paths),
-            "totalImageReferences": sum(len(row.get("images", [])) for row in [*devices, *references]),
+            "totalImageReferences": sum(len(row.get("images", [])) for row in review_items),
             "unusedSuppliedImages": sorted(all_supplied_images - used_source_images),
         },
     }
@@ -932,7 +1047,7 @@ HTML_TEMPLATE = """<!doctype html>
     }
     .check-item label { display: flex; gap: 6px; align-items: flex-start; color: var(--text); font-weight: 730; }
 
-    .tables-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    .tables-grid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th {
       text-align: left;
@@ -985,7 +1100,7 @@ HTML_TEMPLATE = """<!doctype html>
     <header class="topbar">
       <div class="brand">
         <h1>STRIDE Device Review Dashboard</h1>
-        <p>Real-image catalogue review from Excel. Source refreshed: <span id="generatedAt"></span>.</p>
+        <p>Real-image product catalogue review. Source refreshed: <span id="generatedAt"></span>.</p>
       </div>
       <div class="top-actions">
         <button class="button" id="resetFilters" title="Reset dashboard filters">
@@ -1065,20 +1180,8 @@ HTML_TEMPLATE = """<!doctype html>
         <section class="tables-grid">
           <article class="panel">
             <div class="panel-header">
-              <h2 class="panel-title">Reference Image Sources</h2>
-              <p class="panel-subtitle">MakerWorld references from the workbook with supplied real images.</p>
-            </div>
-            <div class="panel-body">
-              <table>
-                <thead><tr><th>Reference</th><th>Division</th><th class="num">Downloads</th><th class="num">Likes</th></tr></thead>
-                <tbody id="referenceRows"></tbody>
-              </table>
-            </div>
-          </article>
-          <article class="panel">
-            <div class="panel-header">
               <h2 class="panel-title">Review Table</h2>
-              <p class="panel-subtitle">Filtered list for quick review and export.</p>
+              <p class="panel-subtitle">Filtered list of Excel devices and supplied image references for quick review and export.</p>
             </div>
             <div class="panel-body">
               <table>
@@ -1101,7 +1204,8 @@ HTML_TEMPLATE = """<!doctype html>
 
   <script>
     const payload = __DATA_JSON__;
-    const devices = payload.devices;
+    const sourceDevices = payload.devices;
+    const devices = payload.catalogueItems || payload.devices;
     const references = payload.references;
     const metrics = payload.metrics;
     const divisions = ["Learning", "Elderly Care", "Blind", "Montessori Kits", "Others"];
@@ -1135,7 +1239,6 @@ HTML_TEMPLATE = """<!doctype html>
       productGrid: document.getElementById("productGrid"),
       productSummary: document.getElementById("productSummary"),
       selectedPanel: document.getElementById("selectedPanel"),
-      referenceRows: document.getElementById("referenceRows"),
       reviewRows: document.getElementById("reviewRows"),
       sourceMethod: document.getElementById("sourceMethod"),
       searchInput: document.getElementById("searchInput"),
@@ -1199,15 +1302,15 @@ HTML_TEMPLATE = """<!doctype html>
     function renderSidebar() {
       const dCounts = countsByDecision();
       els.metricList.innerHTML = [
-        ["Total Devices", metrics.deviceCount, "Current Excel catalogue rows"],
+        ["Review Items", metrics.reviewItemCount, "Excel devices plus supplied image references"],
         ["Assistive", metrics.categoryCounts["Assistive Devices"] || 0, "Assistive device category"],
         ["Cognitive", metrics.categoryCounts["Cognitive Devices"] || 0, "Cognitive device category"],
-        ["Real Images", metrics.qa.devicesWithRealImages + "/" + metrics.deviceCount, metrics.qa.assignedDeviceImages + " supplied image assignments"],
+        ["Real Images", metrics.qa.reviewItemsWithRealImages + "/" + metrics.reviewItemCount, metrics.qa.assignedDeviceImages + " supplied image assignments"],
         ["Next Stage", dCounts["Next Stage"], "Reviewer-approved queue"]
       ].map(row => '<div class="metric"><div><div class="metric-label">' + escapeHTML(row[0]) + '</div><div class="metric-note">' + escapeHTML(row[2]) + '</div></div><div class="metric-value">' + escapeHTML(row[1]) + '</div></div>').join("");
 
       els.divisionButtons.innerHTML = ["All Divisions"].concat(divisions).map(division => {
-        const count = division === "All Divisions" ? metrics.deviceCount : (metrics.divisionCounts[division] || 0);
+        const count = division === "All Divisions" ? metrics.reviewItemCount : (metrics.divisionCounts[division] || 0);
         const dot = division === "All Divisions" ? "review" : divisionClasses[division];
         return '<button class="division-button ' + (state.division === division ? "active" : "") + '" data-division="' + escapeHTML(division) + '"><i class="dot ' + dot + '"></i><span>' + escapeHTML(division) + '</span><strong>' + count + '</strong></button>';
       }).join("");
@@ -1236,7 +1339,7 @@ HTML_TEMPLATE = """<!doctype html>
       const imageText = qa.missingImageItems.length ? "Missing image for " + qa.missingImageItems.length + " item(s)." : "No missing images; " + qa.uniqueImageAssets + " unique real image assets used.";
       const unusedText = qa.unusedSuppliedImages.length ? qa.unusedSuppliedImages.length + " supplied image file(s) unused." : "All supplied real image files are represented.";
       const items = [
-        ["Excel Count", "Workbook dashboard shows " + qa.sourceDashboardTotal + "; current catalogue has " + qa.currentDeviceRows + "."],
+        ["Catalogue Count", "Workbook dashboard shows " + qa.sourceDashboardTotal + "; Excel devices " + qa.currentDeviceRows + "; added image references " + qa.additionalImageRows + "; total review items " + qa.currentReviewRows + "."],
         ["Images", imageText + " " + unusedText],
         ["Target Setting", qa.missingTargetSettings + " rows need target setting review."],
         ["Catalogue ID", displayDuplicateText + " " + sourceDuplicateText]
@@ -1257,13 +1360,13 @@ HTML_TEMPLATE = """<!doctype html>
       }).join("") + '<div class="legend">' + divisions.map(division => '<span><i class="dot ' + divisionClasses[division] + '"></i>' + escapeHTML(division) + '</span>').join("") + '</div>';
     }
     function renderReadinessChart() {
-      const stages = ["Production Ready", "Prototype Ready", "Design Ready", "Needs Design"];
-      const colors = { "Production Ready": "#15803d", "Prototype Ready": "#b45309", "Design Ready": "#4338ca", "Needs Design": "#64748b" };
+      const stages = ["Production Ready", "Prototype Ready", "Design Ready", "Needs Design", "Reference Review"];
+      const colors = { "Production Ready": "#15803d", "Prototype Ready": "#b45309", "Design Ready": "#4338ca", "Needs Design": "#64748b", "Reference Review": "#0f766e" };
       const max = Math.max(...stages.map(stage => metrics.readinessCounts[stage] || 0), 1);
       els.readinessChart.innerHTML = stages.map(stage => {
         const count = metrics.readinessCounts[stage] || 0;
         const pct = count ? Math.max(7, count / max * 100) : 7;
-        return '<div class="funnel-row"><div class="stack-label">' + escapeHTML(stage) + '</div><div class="funnel-track"><div class="funnel-fill" style="width:' + pct + '%; background:' + colors[stage] + '">' + count + '</div></div><div class="stack-total">' + Math.round(count / metrics.deviceCount * 100) + '%</div></div>';
+        return '<div class="funnel-row"><div class="stack-label">' + escapeHTML(stage) + '</div><div class="funnel-track"><div class="funnel-fill" style="width:' + pct + '%; background:' + colors[stage] + '">' + count + '</div></div><div class="stack-total">' + Math.round(count / metrics.reviewItemCount * 100) + '%</div></div>';
       }).join("");
     }
     function renderProducts() {
@@ -1273,9 +1376,9 @@ HTML_TEMPLATE = """<!doctype html>
         state.selectedImage = 0;
       }
       els.cataloguePanel.classList.toggle("list-mode", state.view === "list");
-      els.productSummary.textContent = formatNumber(rows.length) + " of " + formatNumber(devices.length) + " devices shown";
+      els.productSummary.textContent = formatNumber(rows.length) + " of " + formatNumber(devices.length) + " review items shown";
       if (!rows.length) {
-        els.productGrid.innerHTML = '<div class="empty">No devices match the current filters.</div>';
+        els.productGrid.innerHTML = '<div class="empty">No catalogue items match the current filters.</div>';
         renderSelected(null);
         renderReviewRows(rows);
         return;
@@ -1374,18 +1477,12 @@ HTML_TEMPLATE = """<!doctype html>
     function checklistBox(id, key, label, checked) {
       return '<div class="check-item"><label><input type="checkbox" data-check="' + key + '"' + (checked ? " checked" : "") + '> ' + escapeHTML(label) + '</label></div>';
     }
-    function renderReferences() {
-      els.referenceRows.innerHTML = metrics.topReferences.map(row => {
-        const image = row.images.length ? '<img class="ref-thumb" src="' + escapeHTML(row.images[0].src) + '" alt="' + escapeHTML(row.name) + '">' : "";
-        return '<tr><td>' + image + '<strong>' + escapeHTML(row.name) + '</strong><br><span style="color:var(--muted)">' + escapeHTML(row.designer) + '</span></td><td>' + escapeHTML(row.division) + '</td><td class="num">' + escapeHTML(row.downloads || "") + '</td><td class="num">' + escapeHTML(row.likes || "") + '</td></tr>';
-      }).join("");
-    }
     function renderReviewRows(rows) {
       els.reviewRows.innerHTML = rows.slice(0, 16).map(row => '<tr><td>' + escapeHTML(row.siNo) + '</td><td><strong>' + escapeHTML(row.name) + '</strong><br><span style="color:var(--muted)">' + escapeHTML(row.targetSetting || "Target setting not assigned") + '</span></td><td>' + escapeHTML(row.division) + '</td><td><span class="chip ' + decisionClass(decisionFor(row)) + '">' + escapeHTML(decisionFor(row)) + '</span></td></tr>').join("");
     }
     function renderSource() {
       els.generatedAt.textContent = metrics.generatedAt;
-      els.sourceMethod.textContent = "Source workbook: " + metrics.sourceWorkbook + ". Device rows come from the Device Catalogue sheet; external references come from the MakerWorld Reference sheet plus supplemental supplied screenshots that were not represented in the workbook. Product images are copied from the real files supplied in Downloads into dashboard/assets/products, de-duplicated by image content, and reused where the same real source supports more than one product. Duplicate source SI numbers are normalized into unique dashboard catalogue IDs. Review decisions, notes, and checklist states are saved in browser localStorage and exported through CSV.";
+      els.sourceMethod.textContent = "Source workbook: " + metrics.sourceWorkbook + ". Product Review Catalogue includes Device Catalogue rows, MakerWorld Reference rows, and supplemental supplied screenshots that were not represented in the workbook. Product images are copied from the real files supplied in Downloads into dashboard/assets/products, de-duplicated by image content, and reused where the same real source supports more than one product. Duplicate source SI numbers are normalized into unique dashboard catalogue IDs. Review decisions, notes, and checklist states are saved in browser localStorage and exported through CSV.";
     }
     function renderAll() {
       renderSidebar();
@@ -1393,12 +1490,11 @@ HTML_TEMPLATE = """<!doctype html>
       renderDivisionChart();
       renderReadinessChart();
       renderProducts();
-      renderReferences();
       renderSource();
     }
     function wireControls() {
       setSelectOptions(els.categoryFilter, ["All Categories"].concat(Array.from(new Set(devices.map(d => d.categoryLabel))).sort()), state.category);
-      setSelectOptions(els.readinessFilter, ["All Stages", "Production Ready", "Prototype Ready", "Design Ready", "Needs Design"], state.readiness);
+      setSelectOptions(els.readinessFilter, ["All Stages", "Production Ready", "Prototype Ready", "Design Ready", "Needs Design", "Reference Review"], state.readiness);
       setSelectOptions(els.decisionFilter, ["All Decisions", "In Review", "Next Stage", "Pending", "Dispose"], state.decision);
       els.searchInput.addEventListener("input", event => { state.search = event.target.value; renderProducts(); });
       els.categoryFilter.addEventListener("change", event => { state.category = event.target.value; renderAll(); });
@@ -1428,7 +1524,7 @@ HTML_TEMPLATE = """<!doctype html>
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "stride_device_review_decisions.csv";
+      link.download = "stride_product_review_decisions.csv";
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -1449,11 +1545,11 @@ def build() -> None:
     COPIED_IMAGE_BY_HASH.clear()
     if OLD_GENERATED_CONCEPT.exists():
         OLD_GENERATED_CONCEPT.unlink()
-    if PRODUCT_ASSET_DIR.exists():
+    if SOURCE_XLSX.exists() and PRODUCT_ASSET_DIR.exists():
         shutil.rmtree(PRODUCT_ASSET_DIR)
-    devices, references, metrics = load_catalogue()
+    devices, references, review_items, metrics = load_catalogue()
     OUTPUT_HTML.parent.mkdir(parents=True, exist_ok=True)
-    payload = {"devices": devices, "references": references, "metrics": metrics}
+    payload = {"devices": devices, "references": references, "catalogueItems": review_items, "metrics": metrics}
     html = HTML_TEMPLATE.replace("__DATA_JSON__", json.dumps(payload, ensure_ascii=False, separators=(",", ":")))
     OUTPUT_HTML.write_text(html, encoding="utf-8")
     print(OUTPUT_HTML)
