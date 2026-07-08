@@ -75,6 +75,7 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Fraction Circle Puzzle": ["PHOTO-2026-03-17-16-52-11.jpg"],
     "Stacking Toy": ["PHOTO-2026-03-17-16-52-11 2.jpg"],
     "Sensory Chew Necklace": ["PHOTO-2026-04-20-16-09-13.jpg"],
+    "Oral Motor Toolkit 3-Piece Set": ["images (3).jpeg"],
     "Adaptive T-Bar Oral Motor Chew Tube": ["images (2).jpeg"],
     "Fidget Slug": ["PHOTO-2026-04-20-16-09-23.jpg"],
     "Sensory Rubiks Cube": ["PHOTO-2026-04-21-10-53-17.jpg"],
@@ -100,6 +101,7 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Eating Utensil Aid": ["PHOTO-2026-04-28-11-34-06 3.jpg"],
     "Sock Aid": ["PHOTO-2026-04-28-11-34-06.jpg"],
     "Pen Holder Writing Aid": ["PHOTO-2026-04-28-11-34-07.jpg"],
+    "Palm Pen Holder": ["IMG_1905.HEIC"],
     "Shape Sorting Cube": ["PHOTO-2026-03-17-15-56-15.jpg"],
     "Sliding Number Puzzle": ["PHOTO-2026-03-17-15-56-16.jpg", "PHOTO-2026-03-17-15-56-16 2.jpg"],
     "Digit Builders": ["PHOTO-2026-04-28-11-34-02.jpg"],
@@ -124,8 +126,8 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Fidget Slug": REAL_IMAGES["Fidget Slug"],
     "Low Profile Switch": REAL_IMAGES["Low Profile Switch"],
     "Multi Utility Holder (Toothbrush Aid)": REAL_IMAGES["Multi Utility Holder / Toothbrush Aid"],
-    "Oral Motor Toolkit 3-Piece Set": REAL_IMAGES["Sensory Chew Necklace"],
-    "Palm Pen Holder": REAL_IMAGES["Pen Holder Writing Aid"],
+    "Oral Motor Toolkit 3-Piece Set": REAL_IMAGES["Oral Motor Toolkit 3-Piece Set"],
+    "Palm Pen Holder": REAL_IMAGES["Palm Pen Holder"],
     "Pen Holder Writing Aid": REAL_IMAGES["Pen Holder Writing Aid"],
     "Reading Bar": REAL_IMAGES["Book Page Holder"],
     "Sensory Chew Necklace": REAL_IMAGES["Sensory Chew Necklace"],
@@ -175,6 +177,8 @@ DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
     "Braille": REAL_IMAGES["Braille Board"],
     "Button Aid": REAL_IMAGES["Button Aid Product"],
     "Low Profile Switch": REAL_IMAGES["Low Profile Switch"],
+    "Oral Motor Toolkit 3-Piece Set": REAL_IMAGES["Oral Motor Toolkit 3-Piece Set"],
+    "Palm Pen Holder": REAL_IMAGES["Palm Pen Holder"],
 }
 
 REFERENCE_IMAGE_MAP: dict[str, list[str]] = {
