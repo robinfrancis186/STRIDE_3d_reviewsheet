@@ -51,6 +51,8 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Signature Template Aid": ["32c211a1-4e67-427c-a704-a2b150ea5280.JPG"],
     "Pattern Puzzle Block": ["35d5b73b-bfb3-4836-9512-676c43405e5a.JPG", "PHOTO-2026-03-17-15-56-15 2.jpg"],
     "Mini Sensory Shapes": ["60dc13be-b654-4c7a-9ff8-d257ae1d15c3.JPG"],
+    "Sensory Textured Floor Mats Circle": ["images (4).jpeg"],
+    "Sensory Textured Floor Mats Square": ["images (5).jpeg"],
     "Visually Impaired Calendar Board": ["97fb647e-573d-4f08-a37a-0cb09d0dad00.JPG", "665965ce-0efa-4779-9437-c0144fb7771b.JPG"],
     "Door Knob Handle Adapter": ["171fd781-a468-4d36-b070-eff1e22849b4.JPG"],
     "Playing Cards in Braille": ["230b1ed8-f891-4f0b-9f17-985da282357e.JPG", "63004339-e6ac-4a96-ad0e-3ff8aec04ac6.JPG"],
@@ -131,8 +133,8 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Pen Holder Writing Aid": REAL_IMAGES["Pen Holder Writing Aid"],
     "Reading Bar": REAL_IMAGES["Book Page Holder"],
     "Sensory Chew Necklace": REAL_IMAGES["Sensory Chew Necklace"],
-    "Sensory Textured Floor Mats - Circle": REAL_IMAGES["Mini Sensory Shapes"],
-    "Sensory Textured Floor Mats - Square": REAL_IMAGES["Mini Sensory Shapes"],
+    "Sensory Textured Floor Mats - Circle": REAL_IMAGES["Sensory Textured Floor Mats Circle"],
+    "Sensory Textured Floor Mats - Square": REAL_IMAGES["Sensory Textured Floor Mats Square"],
     "Small Pill Popper Blister Medicine Tool": REAL_IMAGES["Small Pill Popper"],
     "Sock Aid / Sock Slider Helper": REAL_IMAGES["Sock Aid"],
     "Tactile Fidget Stones - Set of 6": REAL_IMAGES["Mini Sensory Shapes"],
@@ -179,6 +181,8 @@ DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
     "Low Profile Switch": REAL_IMAGES["Low Profile Switch"],
     "Oral Motor Toolkit 3-Piece Set": REAL_IMAGES["Oral Motor Toolkit 3-Piece Set"],
     "Palm Pen Holder": REAL_IMAGES["Palm Pen Holder"],
+    "Sensory Textured Floor Mats - Circle": REAL_IMAGES["Sensory Textured Floor Mats Circle"],
+    "Sensory Textured Floor Mats - Square": REAL_IMAGES["Sensory Textured Floor Mats Square"],
 }
 
 REFERENCE_IMAGE_MAP: dict[str, list[str]] = {
