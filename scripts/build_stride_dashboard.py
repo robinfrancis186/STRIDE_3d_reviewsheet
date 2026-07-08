@@ -77,6 +77,7 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Sensory Rubiks Cube": ["PHOTO-2026-04-21-10-53-17.jpg"],
     "Tetris": ["PHOTO-2026-04-21-10-53-42.jpg"],
     "Tactile Chess Board": ["PHOTO-2026-04-21-11-09-15.jpg"],
+    "Adaptive Chew Tube Y Shape": ["images.jpeg"],
     "Micro Travel Chess Set": [
         "stride_dashboard_sources/micro-travel-chess-set-1.webp",
         "stride_dashboard_sources/micro-travel-chess-set-2.webp",
@@ -102,7 +103,7 @@ REAL_IMAGES: dict[str, list[str]] = {
 
 
 DEVICE_IMAGE_MAP: dict[str, list[str]] = {
-    "Adaptive Chew Tube 'Y' Shape": REAL_IMAGES["Sensory Chew Necklace"],
+    "Adaptive Chew Tube 'Y' Shape": REAL_IMAGES["Adaptive Chew Tube Y Shape"],
     "Adaptive Dual-Textured Bite Tube Hollow Chew Tool": REAL_IMAGES["Sensory Chew Necklace"],
     "Adaptive Pencil Grip/Holder": REAL_IMAGES["Pen Holder Writing Aid"],
     "Adaptive T-Bar Oral Motor Chew Tube": REAL_IMAGES["Sensory Chew Necklace"],
@@ -159,6 +160,10 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Learning Slate with pencil - Shapes": REAL_IMAGES["Shape Sorting Cube"],
     "Learning Slate with pencil - Fruits": REAL_IMAGES["Pattern Puzzle Block"],
     "Learning Slate with pencil - Vegetables": REAL_IMAGES["Pattern Puzzle Block"],
+}
+
+DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
+    "Adaptive Chew Tube 'Y' Shape": REAL_IMAGES["Adaptive Chew Tube Y Shape"],
 }
 
 REFERENCE_IMAGE_MAP: dict[str, list[str]] = {
@@ -428,9 +433,23 @@ def append_supplemental_references(references: list[dict[str, Any]]) -> list[dic
     return references
 
 
+def apply_device_image_overrides(devices: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    for device in devices:
+        image_names = DEVICE_IMAGE_OVERRIDES.get(device.get("name", ""))
+        if image_names is None:
+            continue
+        images = copy_real_images(image_names, f"device-{device.get('siNo', '')}-{device.get('name', '')}")
+        if not images:
+            continue
+        device["images"] = images
+        device["imageSource"] = "Supplied real image"
+        device["qaFlags"] = [flag for flag in device.get("qaFlags", []) if flag != "Image missing from supplied files"]
+    return devices
+
+
 def load_catalogue_from_existing_payload() -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     payload = load_existing_payload()
-    devices = list(payload.get("devices", []))
+    devices = apply_device_image_overrides(list(payload.get("devices", [])))
     references = append_supplemental_references(list(payload.get("references", [])))
     old_metrics = payload.get("metrics", {})
     old_qa = old_metrics.get("qa", {})
@@ -532,6 +551,7 @@ def load_catalogue() -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[d
                 "about": about_device(row["name"], division, row["targetSetting"], status),
             }
         )
+    devices = apply_device_image_overrides(devices)
 
     references: list[dict[str, Any]] = []
     for row_idx in range(5, reference_ws.max_row + 1):
