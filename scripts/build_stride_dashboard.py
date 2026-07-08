@@ -74,6 +74,7 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Fraction Circle Puzzle": ["PHOTO-2026-03-17-16-52-11.jpg"],
     "Stacking Toy": ["PHOTO-2026-03-17-16-52-11 2.jpg"],
     "Sensory Chew Necklace": ["PHOTO-2026-04-20-16-09-13.jpg"],
+    "Adaptive T-Bar Oral Motor Chew Tube": ["images (2).jpeg"],
     "Fidget Slug": ["PHOTO-2026-04-20-16-09-23.jpg"],
     "Sensory Rubiks Cube": ["PHOTO-2026-04-21-10-53-17.jpg"],
     "Tetris": ["PHOTO-2026-04-21-10-53-42.jpg"],
@@ -108,7 +109,7 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Adaptive Chew Tube 'Y' Shape": REAL_IMAGES["Adaptive Chew Tube Y Shape"],
     "Adaptive Dual-Textured Bite Tube Hollow Chew Tool": REAL_IMAGES["Adaptive Dual Textured Chew Tube"],
     "Adaptive Pencil Grip/Holder": REAL_IMAGES["Pen Holder Writing Aid"],
-    "Adaptive T-Bar Oral Motor Chew Tube": REAL_IMAGES["Sensory Chew Necklace"],
+    "Adaptive T-Bar Oral Motor Chew Tube": REAL_IMAGES["Adaptive T-Bar Oral Motor Chew Tube"],
     "Bag Holder": REAL_IMAGES["Grocery Bag Carrier Handle"],
     "Bottle Cap Opener": REAL_IMAGES["Bottle Cap Opener"],
     "Braille": REAL_IMAGES["Braille Board"],
@@ -167,6 +168,7 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
 DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
     "Adaptive Chew Tube 'Y' Shape": REAL_IMAGES["Adaptive Chew Tube Y Shape"],
     "Adaptive Dual-Textured Bite Tube Hollow Chew Tool": REAL_IMAGES["Adaptive Dual Textured Chew Tube"],
+    "Adaptive T-Bar Oral Motor Chew Tube": REAL_IMAGES["Adaptive T-Bar Oral Motor Chew Tube"],
     "Braille": REAL_IMAGES["Braille Board"],
 }
 
