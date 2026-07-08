@@ -51,6 +51,7 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Signature Template Aid": ["32c211a1-4e67-427c-a704-a2b150ea5280.JPG"],
     "Pattern Puzzle Block": ["35d5b73b-bfb3-4836-9512-676c43405e5a.JPG", "PHOTO-2026-03-17-15-56-15 2.jpg"],
     "Mini Sensory Shapes": ["60dc13be-b654-4c7a-9ff8-d257ae1d15c3.JPG"],
+    "Tactile Fidget Stones Set of 6": ["images (6).jpeg"],
     "Sensory Textured Floor Mats Circle": ["images (4).jpeg"],
     "Sensory Textured Floor Mats Square": ["images (5).jpeg"],
     "Visually Impaired Calendar Board": ["97fb647e-573d-4f08-a37a-0cb09d0dad00.JPG", "665965ce-0efa-4779-9437-c0144fb7771b.JPG"],
@@ -103,6 +104,7 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Eating Utensil Aid": ["PHOTO-2026-04-28-11-34-06 3.jpg"],
     "Sock Aid": ["PHOTO-2026-04-28-11-34-06.jpg"],
     "Pen Holder Writing Aid": ["PHOTO-2026-04-28-11-34-07.jpg"],
+    "Toothbrush Holder": ["IMG_1899.HEIC"],
     "Palm Pen Holder": ["IMG_1905.HEIC"],
     "Shape Sorting Cube": ["PHOTO-2026-03-17-15-56-15.jpg"],
     "Sliding Number Puzzle": ["PHOTO-2026-03-17-15-56-16.jpg", "PHOTO-2026-03-17-15-56-16 2.jpg"],
@@ -137,9 +139,9 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Sensory Textured Floor Mats - Square": REAL_IMAGES["Sensory Textured Floor Mats Square"],
     "Small Pill Popper Blister Medicine Tool": REAL_IMAGES["Small Pill Popper"],
     "Sock Aid / Sock Slider Helper": REAL_IMAGES["Sock Aid"],
-    "Tactile Fidget Stones - Set of 6": REAL_IMAGES["Mini Sensory Shapes"],
+    "Tactile Fidget Stones - Set of 6": REAL_IMAGES["Tactile Fidget Stones Set of 6"],
     "Thick Handle Cutlery Set (Fork & Knife)": REAL_IMAGES["Thick Handle Cutlery Set"],
-    "Toothbrush Holder": REAL_IMAGES["Multi Utility Holder / Toothbrush Aid"],
+    "Toothbrush Holder": REAL_IMAGES["Toothbrush Holder"],
     "Utensil Holder": REAL_IMAGES["Eating Utensil Aid"],
     "Abacus Model": REAL_IMAGES["Abacus Model"],
     "Digit Builders: 7-Segment Display": REAL_IMAGES["Digit Builders"],
@@ -183,6 +185,8 @@ DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
     "Palm Pen Holder": REAL_IMAGES["Palm Pen Holder"],
     "Sensory Textured Floor Mats - Circle": REAL_IMAGES["Sensory Textured Floor Mats Circle"],
     "Sensory Textured Floor Mats - Square": REAL_IMAGES["Sensory Textured Floor Mats Square"],
+    "Tactile Fidget Stones - Set of 6": REAL_IMAGES["Tactile Fidget Stones Set of 6"],
+    "Toothbrush Holder": REAL_IMAGES["Toothbrush Holder"],
 }
 
 REFERENCE_IMAGE_MAP: dict[str, list[str]] = {
