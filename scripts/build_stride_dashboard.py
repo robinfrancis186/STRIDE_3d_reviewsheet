@@ -44,6 +44,7 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Haptic Memory": ["3ff510d7-c533-4301-8b66-3f9f7bc304e5.JPG", "4a535ed4-c270-4c15-83ea-2a6712071b4e.JPG"],
     "Battleship": ["4aab3d2d-6621-4717-b9ae-ddc75720e2dd.JPG"],
     "Braille Generator": ["2fc07c28-877c-47e7-b565-3d91b1dec5ed.JPG"],
+    "Braille Board": ["IMG_20260102_184557.jpg"],
     "Car Door Assist Handle": ["5ffc97ce-fa4c-4535-b108-9a74ae0222be.JPG"],
     "Can Mugger": ["7cb30afa-a855-4814-ae13-f6032f5a2e53.JPG"],
     "Signature Template Aid": ["32c211a1-4e67-427c-a704-a2b150ea5280.JPG"],
@@ -110,7 +111,7 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Adaptive T-Bar Oral Motor Chew Tube": REAL_IMAGES["Sensory Chew Necklace"],
     "Bag Holder": REAL_IMAGES["Grocery Bag Carrier Handle"],
     "Bottle Cap Opener": REAL_IMAGES["Bottle Cap Opener"],
-    "Braille": REAL_IMAGES["Braille Generator"],
+    "Braille": REAL_IMAGES["Braille Board"],
     "Button Aid": REAL_IMAGES["Button Aid"],
     "Button Donning Aid for Pants": REAL_IMAGES["Button Aid"],
     "Can Opener Aid - Nail Protector": REAL_IMAGES["Can Opener Aid"],
@@ -166,6 +167,7 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
 DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
     "Adaptive Chew Tube 'Y' Shape": REAL_IMAGES["Adaptive Chew Tube Y Shape"],
     "Adaptive Dual-Textured Bite Tube Hollow Chew Tool": REAL_IMAGES["Adaptive Dual Textured Chew Tube"],
+    "Braille": REAL_IMAGES["Braille Board"],
 }
 
 REFERENCE_IMAGE_MAP: dict[str, list[str]] = {
