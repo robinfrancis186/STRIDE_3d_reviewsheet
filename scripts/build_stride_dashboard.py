@@ -102,6 +102,7 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Fidget Slug": ["PHOTO-2026-04-20-16-09-23.jpg"],
     "Sensory Rubiks Cube": ["PHOTO-2026-04-21-10-53-17.jpg"],
     "Tetris": ["PHOTO-2026-04-21-10-53-42.jpg"],
+    "Tetris Real Product": ["IMG_2275.HEIC"],
     "Tactile Chess Board": ["PHOTO-2026-04-21-11-09-15.jpg"],
     "Adaptive Chew Tube Y Shape": ["images.jpeg"],
     "Adaptive Dual Textured Chew Tube": ["images (1).jpeg"],
@@ -184,7 +185,7 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Stacking Toy - Cross": REAL_IMAGES["Stacking Toy Collection"],
     "Stacking Toy - Square": REAL_IMAGES["Stacking Toy Collection"],
     "Tactile Chess Board for Visually Impaired Users": REAL_IMAGES["Tactile Chess Board"],
-    "Tetris": REAL_IMAGES["Tetris"],
+    "Tetris": REAL_IMAGES["Tetris Real Product"],
     "Tetris Puzzle Board": REAL_IMAGES["Tetris"],
     "Learning Slate with pencil - Alphabets En": REAL_IMAGES["Learning Slate English Alphabet"],
     "Learning Slate with pencil - Alphabets Malayalam": REAL_IMAGES["Learning Slate Malayalam Alphabet"],
@@ -211,6 +212,7 @@ DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
     "Stacking Toy - Circle": REAL_IMAGES["Stacking Toy Collection"],
     "Stacking Toy - Cross": REAL_IMAGES["Stacking Toy Collection"],
     "Stacking Toy - Square": REAL_IMAGES["Stacking Toy Collection"],
+    "Tetris": REAL_IMAGES["Tetris Real Product"],
 }
 
 REFERENCE_IMAGE_MAP: dict[str, list[str]] = {
