@@ -78,6 +78,7 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Tetris": ["PHOTO-2026-04-21-10-53-42.jpg"],
     "Tactile Chess Board": ["PHOTO-2026-04-21-11-09-15.jpg"],
     "Adaptive Chew Tube Y Shape": ["images.jpeg"],
+    "Adaptive Dual Textured Chew Tube": ["images (1).jpeg"],
     "Micro Travel Chess Set": [
         "stride_dashboard_sources/micro-travel-chess-set-1.webp",
         "stride_dashboard_sources/micro-travel-chess-set-2.webp",
@@ -104,7 +105,7 @@ REAL_IMAGES: dict[str, list[str]] = {
 
 DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Adaptive Chew Tube 'Y' Shape": REAL_IMAGES["Adaptive Chew Tube Y Shape"],
-    "Adaptive Dual-Textured Bite Tube Hollow Chew Tool": REAL_IMAGES["Sensory Chew Necklace"],
+    "Adaptive Dual-Textured Bite Tube Hollow Chew Tool": REAL_IMAGES["Adaptive Dual Textured Chew Tube"],
     "Adaptive Pencil Grip/Holder": REAL_IMAGES["Pen Holder Writing Aid"],
     "Adaptive T-Bar Oral Motor Chew Tube": REAL_IMAGES["Sensory Chew Necklace"],
     "Bag Holder": REAL_IMAGES["Grocery Bag Carrier Handle"],
@@ -164,6 +165,7 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
 
 DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
     "Adaptive Chew Tube 'Y' Shape": REAL_IMAGES["Adaptive Chew Tube Y Shape"],
+    "Adaptive Dual-Textured Bite Tube Hollow Chew Tool": REAL_IMAGES["Adaptive Dual Textured Chew Tube"],
 }
 
 REFERENCE_IMAGE_MAP: dict[str, list[str]] = {
