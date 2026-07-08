@@ -190,8 +190,8 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Learning Slate with pencil - Alphabets En": REAL_IMAGES["Learning Slate English Alphabet"],
     "Learning Slate with pencil - Alphabets Malayalam": REAL_IMAGES["Learning Slate Malayalam Alphabet"],
     "Learning Slate with pencil - Shapes": REAL_IMAGES["Shape Sorting Cube"],
-    "Learning Slate with pencil - Fruits": REAL_IMAGES["Pattern Puzzle Block"],
-    "Learning Slate with pencil - Vegetables": REAL_IMAGES["Pattern Puzzle Block"],
+    "Learning Slate with pencil - Fruits": REAL_IMAGES["Learning Slate English Alphabet"],
+    "Learning Slate with pencil - Vegetables": REAL_IMAGES["Learning Slate English Alphabet"],
 }
 
 DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
@@ -202,6 +202,8 @@ DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
     "Button Aid": REAL_IMAGES["Button Aid Product"],
     "Learning Slate with pencil - Alphabets En": REAL_IMAGES["Learning Slate English Alphabet"],
     "Learning Slate with pencil - Alphabets Malayalam": REAL_IMAGES["Learning Slate Malayalam Alphabet"],
+    "Learning Slate with pencil - Fruits": REAL_IMAGES["Learning Slate English Alphabet"],
+    "Learning Slate with pencil - Vegetables": REAL_IMAGES["Learning Slate English Alphabet"],
     "Low Profile Switch": REAL_IMAGES["Low Profile Switch"],
     "Oral Motor Toolkit 3-Piece Set": REAL_IMAGES["Oral Motor Toolkit 3-Piece Set"],
     "Palm Pen Holder": REAL_IMAGES["Palm Pen Holder"],
