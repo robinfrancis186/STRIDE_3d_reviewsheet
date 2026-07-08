@@ -32,6 +32,11 @@ def dl(name: str) -> Path:
     return Path("/Users/robinfrancis/Downloads") / name
 
 
+def resolve_image_path(image_name: str) -> Path:
+    path = Path(image_name)
+    return path if path.is_absolute() else dl(image_name)
+
+
 REAL_IMAGES: dict[str, list[str]] = {
     "Minimalist Book Stand / Bookend": ["1f07ebff-b70d-4147-82ff-3a69244754a9.JPG"],
     "Book Stand with Dish": ["4c7ca73e-1f78-4093-b2b4-33fc8ca176cc.JPG"],
@@ -50,6 +55,9 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Can Mugger": ["7cb30afa-a855-4814-ae13-f6032f5a2e53.JPG"],
     "Signature Template Aid": ["32c211a1-4e67-427c-a704-a2b150ea5280.JPG"],
     "Pattern Puzzle Block": ["35d5b73b-bfb3-4836-9512-676c43405e5a.JPG", "PHOTO-2026-03-17-15-56-15 2.jpg"],
+    "Stacking Toy Collection": [
+        "/var/folders/cl/krw8r1cs1wvbqgd9thdtlntc0000gn/T/TemporaryItems/NSIRD_screencaptureui_8XqGKa/Screenshot 2026-07-08 at 11.21.09\u202fam.png",
+    ],
     "Mini Sensory Shapes": ["60dc13be-b654-4c7a-9ff8-d257ae1d15c3.JPG"],
     "Tactile Fidget Stones Set of 6": ["images (6).jpeg"],
     "Sensory Textured Floor Mats Circle": ["images (4).jpeg"],
@@ -161,9 +169,9 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Shape Sorting Cube for Cognitive Development": REAL_IMAGES["Shape Sorting Cube"],
     "Sliding Number Puzzle - 16": REAL_IMAGES["Sliding Number Puzzle"],
     "Sliding Number Puzzle - 8": REAL_IMAGES["Sliding Number Puzzle"],
-    "Stacking Toy - Circle": REAL_IMAGES["Stacking Toy"],
-    "Stacking Toy - Cross": REAL_IMAGES["Stacking Toy"],
-    "Stacking Toy - Square": REAL_IMAGES["Stacking Toy"],
+    "Stacking Toy - Circle": REAL_IMAGES["Stacking Toy Collection"],
+    "Stacking Toy - Cross": REAL_IMAGES["Stacking Toy Collection"],
+    "Stacking Toy - Square": REAL_IMAGES["Stacking Toy Collection"],
     "Tactile Chess Board for Visually Impaired Users": REAL_IMAGES["Tactile Chess Board"],
     "Tetris": REAL_IMAGES["Tetris"],
     "Tetris Puzzle Board": REAL_IMAGES["Tetris"],
@@ -187,6 +195,9 @@ DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
     "Sensory Textured Floor Mats - Square": REAL_IMAGES["Sensory Textured Floor Mats Square"],
     "Tactile Fidget Stones - Set of 6": REAL_IMAGES["Tactile Fidget Stones Set of 6"],
     "Toothbrush Holder": REAL_IMAGES["Toothbrush Holder"],
+    "Stacking Toy - Circle": REAL_IMAGES["Stacking Toy Collection"],
+    "Stacking Toy - Cross": REAL_IMAGES["Stacking Toy Collection"],
+    "Stacking Toy - Square": REAL_IMAGES["Stacking Toy Collection"],
 }
 
 REFERENCE_IMAGE_MAP: dict[str, list[str]] = {
@@ -364,7 +375,7 @@ def copy_real_images(image_names: list[str], asset_prefix: str) -> list[dict[str
     copied: list[dict[str, str]] = []
     PRODUCT_ASSET_DIR.mkdir(parents=True, exist_ok=True)
     for image_name in image_names:
-        source = dl(image_name)
+        source = resolve_image_path(image_name)
         if not source.exists():
             continue
         source_ext = source.suffix.lower()
