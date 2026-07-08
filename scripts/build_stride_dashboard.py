@@ -4,6 +4,7 @@ import json
 import hashlib
 import re
 import shutil
+import subprocess
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -102,6 +103,7 @@ REAL_IMAGES: dict[str, list[str]] = {
     "Sliding Number Puzzle": ["PHOTO-2026-03-17-15-56-16.jpg", "PHOTO-2026-03-17-15-56-16 2.jpg"],
     "Digit Builders": ["PHOTO-2026-04-28-11-34-02.jpg"],
     "Button Aid": ["PHOTO-2026-04-28-11-34-05.jpg"],
+    "Button Aid Product": ["IMG_2268.HEIC"],
 }
 
 
@@ -113,7 +115,7 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Bag Holder": REAL_IMAGES["Grocery Bag Carrier Handle"],
     "Bottle Cap Opener": REAL_IMAGES["Bottle Cap Opener"],
     "Braille": REAL_IMAGES["Braille Board"],
-    "Button Aid": REAL_IMAGES["Button Aid"],
+    "Button Aid": REAL_IMAGES["Button Aid Product"],
     "Button Donning Aid for Pants": REAL_IMAGES["Button Aid"],
     "Can Opener Aid - Nail Protector": REAL_IMAGES["Can Opener Aid"],
     "Easy-Open Water Bottle Opener": REAL_IMAGES["Easy-Open Water Bottle Opener"],
@@ -170,6 +172,7 @@ DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
     "Adaptive Dual-Textured Bite Tube Hollow Chew Tool": REAL_IMAGES["Adaptive Dual Textured Chew Tube"],
     "Adaptive T-Bar Oral Motor Chew Tube": REAL_IMAGES["Adaptive T-Bar Oral Motor Chew Tube"],
     "Braille": REAL_IMAGES["Braille Board"],
+    "Button Aid": REAL_IMAGES["Button Aid Product"],
 }
 
 REFERENCE_IMAGE_MAP: dict[str, list[str]] = {
@@ -350,13 +353,22 @@ def copy_real_images(image_names: list[str], asset_prefix: str) -> list[dict[str
         source = dl(image_name)
         if not source.exists():
             continue
-        ext = source.suffix.lower() if source.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"} else ".jpg"
+        source_ext = source.suffix.lower()
+        ext = source_ext if source_ext in {".jpg", ".jpeg", ".png", ".webp"} else ".jpg"
         source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
         dest_name = COPIED_IMAGE_BY_HASH.get(source_hash)
         if dest_name is None:
             dest_name = f"{slugify(source.stem)}-{source_hash[:8]}{ext}"
             dest = PRODUCT_ASSET_DIR / dest_name
-            shutil.copy2(source, dest)
+            if source_ext in {".jpg", ".jpeg", ".png", ".webp"}:
+                shutil.copy2(source, dest)
+            else:
+                subprocess.run(
+                    ["sips", "-s", "format", "jpeg", str(source), "--out", str(dest)],
+                    check=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
             COPIED_IMAGE_BY_HASH[source_hash] = dest_name
         copied.append(
             {
