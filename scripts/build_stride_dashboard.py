@@ -89,6 +89,7 @@ REAL_IMAGES: dict[str, list[str]] = {
     ],
     "Abacus Model": ["PHOTO-2026-04-28-11-34-03 2.jpg"],
     "Focus-Boosting Eight-Figure Tool": ["PHOTO-2026-04-28-11-34-03 3.jpg"],
+    "Low Profile Switch": ["IMG_1913.HEIC"],
     "Learning Scale with Numbers": ["PHOTO-2026-04-28-11-34-03.jpg"],
     "I Know My Shapes Box": ["PHOTO-2026-04-28-11-34-04 2.jpg", "PHOTO-2026-03-17-15-56-15.jpg"],
     "Easy-Open Water Bottle Opener": ["PHOTO-2026-04-28-11-34-04 3.jpg"],
@@ -121,7 +122,7 @@ DEVICE_IMAGE_MAP: dict[str, list[str]] = {
     "Easy-Open Water Bottle Opener": REAL_IMAGES["Easy-Open Water Bottle Opener"],
     "Eating Utensil Aid": REAL_IMAGES["Eating Utensil Aid"],
     "Fidget Slug": REAL_IMAGES["Fidget Slug"],
-    "Low Profile Switch": REAL_IMAGES["Focus-Boosting Eight-Figure Tool"],
+    "Low Profile Switch": REAL_IMAGES["Low Profile Switch"],
     "Multi Utility Holder (Toothbrush Aid)": REAL_IMAGES["Multi Utility Holder / Toothbrush Aid"],
     "Oral Motor Toolkit 3-Piece Set": REAL_IMAGES["Sensory Chew Necklace"],
     "Palm Pen Holder": REAL_IMAGES["Pen Holder Writing Aid"],
@@ -173,6 +174,7 @@ DEVICE_IMAGE_OVERRIDES: dict[str, list[str]] = {
     "Adaptive T-Bar Oral Motor Chew Tube": REAL_IMAGES["Adaptive T-Bar Oral Motor Chew Tube"],
     "Braille": REAL_IMAGES["Braille Board"],
     "Button Aid": REAL_IMAGES["Button Aid Product"],
+    "Low Profile Switch": REAL_IMAGES["Low Profile Switch"],
 }
 
 REFERENCE_IMAGE_MAP: dict[str, list[str]] = {
